@@ -1,0 +1,43 @@
+syntax = "proto3";
+package voucher_api;
+option go_package = "github.com/h-varmazyar/voucher/api/proto;voucherApi";
+
+message Void {}
+
+message Voucher {
+  enum type{
+    Voucher = 0;
+    Credit = 1;
+  }
+  // @inject_tag: json:"id"
+  string ID = 1;
+  // @inject_tag: json:"created_at"
+  int64 CreatedAt = 2;
+  // @inject_tag: json:"updated_at"
+  int64 UpdatedAt = 3;
+  // @inject_tag: json:"max_amount"
+  int64 MaxAmount = 4;
+  // @inject_tag: json:"usage_limit"
+  int64 UsageLimit = 5;
+  // @inject_tag: json:"discount"
+  int32 Discount = 6;
+  // @inject_tag: json:"code"
+  string Code = 7;
+  // @inject_tag: json:"start_time"
+  int64 StartTime = 8;
+  // @inject_tag: json:"expiration_time"
+  int64 ExpirationTime = 9;
+  // @inject_tag: json:"description"
+  string Description = 10;
+  // @inject_tag: json:"amount"
+  int64 Amount = 11;
+  // @inject_tag: json:"type"
+  type Type = 12;
+}
+
+message Usages {
+  // @inject_tag: json:"voucher"
+  Voucher Voucher = 1;
+  // @inject_tag: json:"phone_numbers"
+  repeated string PhoneNumbers = 2;
+}

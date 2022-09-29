@@ -1,0 +1,14 @@
+# IDE
+.idea
+.vscode
+# Secret files
+*.secret
+
+# System files
+.DS_Store
+.docker
+
+# Auto generated
+logs
+build
+*.dat

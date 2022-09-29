@@ -1,0 +1,48 @@
+syntax = "proto3";
+package voucher_api;
+option go_package = "github.com/h-varmazyar/voucher/api/proto;voucherApi";
+import "api/proto/src/models.proto";
+
+service VoucherService{
+  rpc Create(VoucherCreateReq) returns (Voucher);
+  rpc Apply(VoucherApplyReq) returns (Void);
+  rpc Usage(VoucherUsageReq) returns (Usages);
+}
+
+message VoucherCreateReq{
+  // @inject_tag: json:"max_amount,omitempty"
+  int64 MaxAmount = 1;
+  // @inject_tag: json:"usage_limit,omitempty"
+  int64 UsageLimit = 2;
+  // @inject_tag: json:"discount,omitempty"
+  int32 Discount = 3;
+  // @inject_tag: json:"code"
+  string Code = 4;
+  // @inject_tag: json:"start_time,omitempty"
+  int64 StartTime = 5;
+  // @inject_tag: json:"expiration_time,omitempty"
+  int64 ExpirationTime = 6;
+  // @inject_tag: json:"description,omitempty"
+  string Description = 7;
+  // @inject_tag: json:"amount,omitempty"
+  int64 Amount = 8;
+  // @inject_tag: json:"type"
+  Voucher.type Type = 9;
+}
+
+message VoucherApplyReq{
+  // @inject_tag: json:"code"
+  string Code = 1;
+  // @inject_tag: json:"phone_number"
+  string PhoneNumber = 2;
+}
+
+message VoucherUsageReq{
+  // @inject_tag: json:"identifier"
+  oneof Identifier {
+    // @inject_tag: json:"code"
+    string Code = 1;
+    // @inject_tag: json:"id"
+    string ID = 2;
+  }
+}
