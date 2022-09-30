@@ -13,7 +13,7 @@ import (
 	walletApi "github.com/h-varmazyar/wallet/api/proto"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"gorm.io/gorm"
+	"strings"
 )
 
 type Service struct {
@@ -21,7 +21,7 @@ type Service struct {
 	repository    Repository
 	walletService walletApi.WalletServiceClient
 	configs       *Configs
-	log           *log.Logger
+	logger        *log.Logger
 }
 
 func NewService(configs *Configs, db *db.DB, log *log.Logger) *Service {
@@ -30,7 +30,7 @@ func NewService(configs *Configs, db *db.DB, log *log.Logger) *Service {
 		repository:    NewRepository(db, log),
 		walletService: walletApi.NewWalletServiceClient(walletConn),
 		configs:       configs,
-		log:           log,
+		logger:        log,
 	}
 
 	return service
@@ -97,7 +97,11 @@ func (s *Service) Usage(ctx context.Context, req *voucherApi.VoucherUsageReq) (*
 		phoneNumber = append(phoneNumber, usage.PhoneNumber)
 	}
 	mapper.Slice(phoneNumber, &response.PhoneNumbers)
-	mapper.Struct(voucher, &response.Voucher)
+
+	respVoucher := new(voucherApi.Voucher)
+	mapper.Struct(voucher, respVoucher)
+	response.Voucher = respVoucher
+	response.Count = int64(len(phoneNumber))
 
 	return response, nil
 }
@@ -157,7 +161,7 @@ func (s *Service) fetchWallet(ctx context.Context, phoneNumber string) (*walletA
 	if wallet, err = s.walletService.ReturnByPhoneNumber(ctx, &walletApi.WalletReturnByPhoneReq{
 		PhoneNumber: phoneNumber,
 	}); err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if strings.Contains(err.Error(), "record not found") {
 			if wallet, err = s.walletService.Create(ctx, &walletApi.WalletCreateReq{
 				PhoneNumber: phoneNumber,
 				Amount:      0,
@@ -178,8 +182,9 @@ func (s *Service) chargeWallet(ctx context.Context, voucher *entity.Voucher, wal
 		RefID:       usageID.String(),
 		Description: fmt.Sprintf("add credit of voucher %v", voucher.Code),
 	}); err != nil {
-		if err = s.repository.DeleteUsage(ctx, usageID, true); err != nil {
-			//TODO: log error
+		s.logger.WithError(err).Errorf("failed to deposite wallet %v for voucher %v", walletID, voucher.Code)
+		if rollbackErr := s.repository.DeleteUsage(ctx, usageID, true); rollbackErr != nil {
+			s.logger.WithError(rollbackErr).Errorf("failed to rollback uage: %v", usageID)
 		}
 		return err
 	}

@@ -26,9 +26,28 @@ func NewHandler(configs *Configs, logger *log.Logger) *Handler {
 func (h *Handler) RegisterRoutes(router *gin.Engine) {
 	voucherRoutes := router.Group("/vouchers")
 
+	voucherRoutes.POST("/", h.createVoucher)
 	voucherRoutes.GET("/:voucher_code/usages", h.voucherUsages)
 	voucherRoutes.POST("/:voucher_code/apply", h.applyVoucher)
 
+}
+
+func (h *Handler) createVoucher(c *gin.Context) {
+	req := new(voucherApi.VoucherCreateReq)
+	if err := c.BindJSON(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	if voucher, err := h.voucherService.Create(c, req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, voucher)
+	}
 }
 
 func (h *Handler) voucherUsages(c *gin.Context) {

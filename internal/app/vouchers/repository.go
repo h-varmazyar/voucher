@@ -83,7 +83,7 @@ func (r *repository) UsageCount(_ context.Context, voucherID uuid.UUID) (int64, 
 }
 
 func (r *repository) AddUsage(_ context.Context, usage *entity.VoucherUsage) (*entity.VoucherUsage, error) {
-	if err := r.db.Model(new(entity.VoucherUsage)).Save(usage).Error; err != nil {
+	if err := r.db.Save(usage).Error; err != nil {
 		return nil, err
 	}
 	return usage, nil
@@ -107,7 +107,7 @@ func (r *repository) UsageList(_ context.Context, voucherID uuid.UUID) ([]*entit
 	if err := r.db.
 		Model(new(entity.VoucherUsage)).
 		Where("voucher_id = ?", voucherID).
-		Find(transactions).Error; err != nil {
+		Find(&transactions).Error; err != nil {
 		return nil, err
 	}
 	return transactions, nil
