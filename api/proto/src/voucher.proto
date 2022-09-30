@@ -1,7 +1,7 @@
 syntax = "proto3";
 package voucher_api;
 option go_package = "github.com/h-varmazyar/voucher/api/proto;voucherApi";
-import "api/proto/src/models.proto";
+import "api/proto/src/voucherModels.proto";
 
 service VoucherService{
   rpc Create(VoucherCreateReq) returns (Voucher);

@@ -1,0 +1,6 @@
+dsn: postgresql://postgres:postgres@localhost/voucher?sslmode=disable
+grpc_port: 3002
+http_port: 5002
+vouchers_configs:
+  wallet_service_address: :3001
+  voucher_service_address: :3002
