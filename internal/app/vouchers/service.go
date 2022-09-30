@@ -14,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"strings"
+	"time"
 )
 
 type Service struct {
@@ -64,6 +65,10 @@ func (s *Service) Apply(ctx context.Context, req *voucherApi.VoucherApplyReq) (*
 	}
 
 	if err = s.checkVoucherUsage(ctx, voucher, req.PhoneNumber); err != nil {
+		return nil, err
+	}
+
+	if err = s.checkVoucherExpiration(ctx, voucher); err != nil {
 		return nil, err
 	}
 
@@ -125,6 +130,16 @@ func (s *Service) checkVoucherUsage(ctx context.Context, voucher *entity.Voucher
 	}
 	if used {
 		return errors.New("voucher code used before")
+	}
+	return nil
+}
+
+func (s *Service) checkVoucherExpiration(_ context.Context, voucher *entity.Voucher) error {
+	if voucher.ExpirationTime.Before(time.Now()) {
+		return errors.New("voucher expired")
+	}
+	if voucher.StartTime.After(time.Now()) {
+		return errors.New("invalid voucher")
 	}
 	return nil
 }
