@@ -32,33 +32,36 @@ type WorkerResp struct {
 	Error  error
 }
 
-func NewWorker(configs *Configs, r Repository) *ApplyWorker {
+func NewWorker(configs *Configs, logger *log.Logger, r Repository) *ApplyWorker {
 	worker := new(ApplyWorker)
 
 	walletConn := grpcext.NewConnection(configs.WalletServiceAddress)
 	worker.walletService = walletApi.NewWalletServiceClient(walletConn)
 	worker.repository = r
+	worker.logger = logger
 	worker.dataChan = make(chan *workerSeed)
 
 	return worker
 }
 
 func (w *ApplyWorker) Start() {
-	for {
-		seed, ok := <-w.dataChan
-		if !ok {
-			break
-		}
+	go func() {
+		for {
+			seed, ok := <-w.dataChan
+			if !ok {
+				break
+			}
 
-		response := w.consumeSeed(seed)
+			response := w.consumeSeed(seed)
 
-		select {
-		case <-seed.ctx.Done():
-			return
-		default:
-			seed.respChan <- response
+			select {
+			case <-seed.ctx.Done():
+				return
+			default:
+				seed.respChan <- response
+			}
 		}
-	}
+	}()
 }
 
 func (w *ApplyWorker) consumeSeed(seed *workerSeed) *WorkerResp {

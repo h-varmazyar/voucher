@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/h-varmazyar/voucher/internal/pkg/db"
 	"github.com/h-varmazyar/voucher/internal/pkg/entity"
+	"github.com/h-varmazyar/voucher/pkg/validatorext"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -29,8 +30,10 @@ func NewRepository(db *db.DB, logger *log.Logger) Repository {
 	return &repository{logger, db}
 }
 
-func (r *repository) Create(_ context.Context, voucher *entity.Voucher) (*entity.Voucher, error) {
-	//TODO: validate voucher
+func (r *repository) Create(ctx context.Context, voucher *entity.Voucher) (*entity.Voucher, error) {
+	if err := validatorext.Struct(ctx, voucher); err != nil {
+		return nil, err
+	}
 	if err := r.db.Save(voucher).Error; err != nil {
 		return nil, err
 	}
@@ -82,7 +85,10 @@ func (r *repository) UsageCount(_ context.Context, voucherID uuid.UUID) (int64, 
 	return count, nil
 }
 
-func (r *repository) AddUsage(_ context.Context, usage *entity.VoucherUsage) (*entity.VoucherUsage, error) {
+func (r *repository) AddUsage(ctx context.Context, usage *entity.VoucherUsage) (*entity.VoucherUsage, error) {
+	if err := validatorext.Struct(ctx, usage); err != nil {
+		return nil, err
+	}
 	if err := r.db.Save(usage).Error; err != nil {
 		return nil, err
 	}

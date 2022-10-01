@@ -32,7 +32,7 @@ func NewService(configs *Configs, db *db.DB, log *log.Logger) *Service {
 	service := &Service{
 		repository:    repository,
 		walletService: walletApi.NewWalletServiceClient(walletConn),
-		applyWorker:   NewWorker(configs, repository),
+		applyWorker:   NewWorker(configs, log, repository),
 		configs:       configs,
 		logger:        log,
 	}
@@ -50,6 +50,7 @@ func (s *Service) Create(ctx context.Context, req *voucherApi.VoucherCreateReq) 
 	voucher := new(entity.Voucher)
 	mapper.Struct(req, voucher)
 
+	s.logger.Infof(" voucher: %v", voucher)
 	if tx, err := s.repository.Create(ctx, voucher); err != nil {
 		return nil, err
 	} else {

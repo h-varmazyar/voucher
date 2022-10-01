@@ -40,6 +40,8 @@ func (h *Handler) createVoucher(c *gin.Context) {
 		})
 		return
 	}
+
+	h.logger.Infof("vt: %v", req.Type)
 	if voucher, err := h.voucherService.Create(c, req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
