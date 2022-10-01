@@ -48,7 +48,7 @@ func (h *Handler) createVoucher(c *gin.Context) {
 		})
 		return
 	} else {
-		c.JSON(http.StatusOK, voucher)
+		c.JSON(http.StatusCreated, voucher)
 	}
 }
 

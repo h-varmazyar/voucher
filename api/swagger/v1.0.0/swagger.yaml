@@ -1,0 +1,197 @@
+openapi: 3.0.1
+info:
+  title: Voucher API
+  version: v1.0.0
+servers:
+  - url: 'http://localhost:5002'
+
+paths:
+  /vouchers:
+    post:
+      operationId: voucher_create
+      summary: Create a new voucher
+      security:
+        - staticAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoucherCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+        '400':
+          $ref: '#/components/responses/400'
+        '500':
+          $ref: '#/components/responses/500'
+  /vouchers/{voucher_code}/usages:
+    get:
+      operationId: voucher_usages
+      summary: Return list of voucher usages
+      parameters:
+        - $ref: '#/components/parameters/voucher_code'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usages'
+        '400':
+          $ref: '#/components/responses/400'
+        '500':
+          $ref: '#/components/responses/500'
+  /vouchers/{voucher_code}/apply:
+    post:
+      operationId: voucher_apply
+      summary: apply voucher for user
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '500':
+          $ref: '#/components/responses/500'
+components:
+  parameters:
+    voucher_code:
+      name: banner_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '400':
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '500':
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      readOnly: true
+      properties:
+        message:
+          type: string
+          description: Localized error message
+        details:
+          type: array
+          items:
+            type: string
+          description: Systematic error details
+    Voucher:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Voucher primary key
+        max_amount:
+          type: number
+          format: int64
+          description: maximum amount of voucher
+        usage_limit:
+          type: number
+          format: int64
+          description: maximum number of usage
+        discount:
+          type: number
+          format: int32
+          description: voucher discount percentage
+        code:
+          type: string
+          description: voucher code
+        description:
+          type: string
+          description: voucher description
+        amount:
+          type: number
+          format: int64
+          description: credit amount
+        type:
+          type: string
+          description: voucher type
+        start_time:
+          type: number
+          format: 'date-time'
+          readOnly: true
+          description: starting time of voucher
+        expiration_time:
+          type: number
+          format: 'date-time'
+          readOnly: true
+          description: expiration time of voucher
+        created_at:
+          type: number
+          format: 'date-time'
+          readOnly: true
+          description: Voucher record created time
+        updated_at:
+          type: number
+          format: 'date-time'
+          readOnly: true
+          description: Voucher record latest update time
+    Usages:
+      type: object
+      readOnly: true
+      properties:
+        voucher:
+          type: object
+          description: Voucher
+        phone_numbers:
+          type: array
+          description: phone number of users that use this voucher
+        count:
+          type: integer
+          description: usage count
+    VoucherCreate:
+      type: object
+      properties:
+        max_amount:
+          type: number
+          format: int64
+          description: maximum amount of voucher
+        usage_limit:
+          type: number
+          format: int64
+          description: maximum number of usage
+        discount:
+          type: number
+          format: int32
+          description: voucher discount percentage
+        code:
+          type: string
+          description: voucher code
+        description:
+          type: string
+          description: voucher description
+        amount:
+          type: number
+          format: int64
+          description: credit amount
+        type:
+          type: string
+          description: voucher type
+        start_time:
+          type: number
+          format: 'date-time'
+          readOnly: true
+          description: starting time of voucher
+        expiration_time:
+          type: number
+          format: 'date-time'
+          readOnly: true
+          description: expiration time of voucher
