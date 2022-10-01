@@ -4,3 +4,4 @@ http_port: 5002
 vouchers_configs:
   wallet_service_address: :3001
   voucher_service_address: :3002
+  apply_credit_timeout: 1s

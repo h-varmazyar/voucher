@@ -21,18 +21,23 @@ type Service struct {
 	voucherApi.UnimplementedVoucherServiceServer
 	repository    Repository
 	walletService walletApi.WalletServiceClient
+	applyWorker   *ApplyWorker
 	configs       *Configs
 	logger        *log.Logger
 }
 
 func NewService(configs *Configs, db *db.DB, log *log.Logger) *Service {
 	walletConn := grpcext.NewConnection(configs.WalletServiceAddress)
+	repository := NewRepository(db, log)
 	service := &Service{
-		repository:    NewRepository(db, log),
+		repository:    repository,
 		walletService: walletApi.NewWalletServiceClient(walletConn),
+		applyWorker:   NewWorker(configs, repository),
 		configs:       configs,
 		logger:        log,
 	}
+
+	service.applyWorker.Start()
 
 	return service
 }
@@ -55,6 +60,35 @@ func (s *Service) Create(ctx context.Context, req *voucherApi.VoucherCreateReq) 
 }
 
 func (s *Service) Apply(ctx context.Context, req *voucherApi.VoucherApplyReq) (*voucherApi.Void, error) {
+	//var (
+	//	err     error
+	//	voucher *entity.Voucher
+	//)
+	//
+	//if voucher, err = s.repository.ReturnByCode(ctx, req.Code); err != nil {
+	//	return nil, err
+	//}
+	//
+	//if err = s.checkVoucherExpiration(ctx, voucher); err != nil {
+	//	return nil, err
+	//}
+	//
+	//if err = s.checkVoucherUsage(ctx, voucher, req.PhoneNumber); err != nil {
+	//	return nil, err
+	//}
+	//
+	//switch voucher.Type {
+	//case voucherApi.Voucher_Voucher:
+	//	return nil, errors.New("unimplemented")
+	//case voucherApi.Voucher_Credit:
+	//	err = s.creditAllocation(ctx, voucher, req.PhoneNumber)
+	//}
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return new(voucherApi.Void), nil
+
 	var (
 		err     error
 		voucher *entity.Voucher
@@ -64,25 +98,31 @@ func (s *Service) Apply(ctx context.Context, req *voucherApi.VoucherApplyReq) (*
 		return nil, err
 	}
 
-	if err = s.checkVoucherUsage(ctx, voucher, req.PhoneNumber); err != nil {
-		return nil, err
-	}
-
 	if err = s.checkVoucherExpiration(ctx, voucher); err != nil {
 		return nil, err
 	}
 
-	switch voucher.Type {
-	case voucherApi.Voucher_Voucher:
-		return nil, errors.New("unimplemented")
-	case voucherApi.Voucher_Credit:
-		err = s.creditAllocation(ctx, voucher, req.PhoneNumber)
-	}
-	if err != nil {
-		return nil, err
+	timeout := time.Tick(s.configs.ApplyCreditTimeout)
+	workerResp := make(chan *WorkerResp)
+
+	s.applyWorker.dataChan <- &workerSeed{
+		ctx:         ctx,
+		voucher:     voucher,
+		phoneNumber: req.PhoneNumber,
+		respChan:    workerResp,
 	}
 
-	return new(voucherApi.Void), nil
+	select {
+	case resp := <-workerResp:
+		if resp.isDone {
+			return new(voucherApi.Void), nil
+		}
+		return nil, resp.Error
+	case <-ctx.Done():
+		return nil, err
+	case <-timeout:
+		return nil, err
+	}
 }
 
 func (s *Service) Usage(ctx context.Context, req *voucherApi.VoucherUsageReq) (*voucherApi.Usages, error) {
